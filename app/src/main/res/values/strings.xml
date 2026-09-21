@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ticket</string>
+    <string name="web_label">Atendimento</string>
+
+    <string name="notification_channel_sync">Sincronização</string>
+    <string name="notification_channel_sync_description">Andamento do envio de eventos ao Ticket</string>
+    <string name="notification_channel_sync_results">Resultado dos envios</string>
+    <string name="notification_channel_sync_results_description">Avisa quando um evento é entregue ou falha</string>
+</resources>
