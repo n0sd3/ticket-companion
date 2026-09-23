@@ -34,6 +34,7 @@ internal fun EventDetailsSheet(
     val error = MaterialTheme.colorScheme.error
     val details = buildList {
         add(Detail("Situação", item.status.label(), item.status.tint()))
+        item.notSentReason?.let { add(Detail("Por que não foi enviado", it)) }
         add(Detail("App", item.appName))
         add(Detail("Capturado em", item.fullTime))
         item.payer?.let { add(Detail("Pagador", it)) }

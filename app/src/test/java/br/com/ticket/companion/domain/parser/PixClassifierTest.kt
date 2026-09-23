@@ -35,9 +35,53 @@ class PixClassifierTest {
         }
     }
 
-    @Test fun `does not synchronize transfers purchases missing or invalid amounts`() {
+    // Forma real de uma notificação do Nubank PJ (só o nome foi trocado): o banco anuncia o Pix
+    // recebido como "Transferência recebida" e nunca escreve a palavra "Pix".
+    @Test fun `bank that announces a received transfer without saying Pix is accepted as a medium confidence credit`() {
+        val result = classifier.classify(
+            "com.nu.production",
+            "Transferência recebida na conta PJ",
+            "Você recebeu R$ 12,00 de MARIA SOUZA LIMA na conta Nu Empresas."
+        )
+        assertEquals(TransactionType.TRANSFER_RECEIVED, result.transactionType)
+        assertEquals(Direction.INCOMING, result.direction)
+        assertEquals(1200L, result.amountCents)
+        assertEquals("MARIA SOUZA LIMA", result.payerName)
+        assertEquals(Confidence.MEDIUM, result.confidence)
+        assertTrue(result.shouldSync)
+    }
+
+    @Test fun `received transfer wording counts as a credit too`() {
         listOf(
             "Você recebeu uma transferência de R$ 50,00",
+            "Transferência recebida: R$ 50,00 de Maria Silva"
+        ).forEach {
+            val result = classifier.classify("unknown", null, it)
+            assertEquals(it, TransactionType.TRANSFER_RECEIVED, result.transactionType)
+            assertTrue(it, result.shouldSync)
+        }
+    }
+
+    @Test fun `received transfer with negative evidence or without one clear amount never syncs`() {
+        listOf(
+            "Transferência recebida: devolução de R$ 12,00",
+            "Transferência recebida estornada de R$ 12,00",
+            "Transferência recebida pendente de R$ 12,00",
+            "Você não recebeu uma transferência de R$ 12,00",
+            "Transferência recebida de R$ 12,00. Saldo R$ 100,00",
+            "Transferência recebida",
+            "Você enviou uma transferência de R$ 12,00",
+            "Você recebeu R$ 12,00 de cashback"
+        ).forEach { assertFalse(it, classifier.classify("unknown", null, it).shouldSync) }
+    }
+
+    @Test fun `payer name stops before the account suffix`() {
+        val result = classifier.classify("unknown", "Transferência recebida", "Você recebeu R$ 12,00 de João da Silva na conta Nu Empresas.")
+        assertEquals("João da Silva", result.payerName)
+    }
+
+    @Test fun `does not synchronize purchases missing or invalid amounts`() {
+        listOf(
             "Compra no cartão de R$ 50,00",
             "Você recebeu um Pix",
             "Você recebeu um Pix de R$ 0,00",

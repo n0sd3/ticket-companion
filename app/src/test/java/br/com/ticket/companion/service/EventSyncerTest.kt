@@ -10,6 +10,7 @@ import br.com.ticket.companion.data.remote.TicketApiFactory
 import br.com.ticket.companion.domain.connection.ConnectionManager
 import br.com.ticket.companion.domain.connection.ConnectionState
 import br.com.ticket.companion.domain.parser.PixClassifier
+import br.com.ticket.companion.domain.parser.TransactionType
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -19,11 +20,13 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [35])
@@ -59,6 +62,27 @@ class EventSyncerTest {
             assertEquals(SyncStatus.DELIVERED, database.notificationDao().getById(event.id)!!.syncStatus)
             assertEquals("MATCHED", database.notificationDao().getById(event.id)!!.reconciliationStatus)
             assertEquals("DELIVERED: MATCHED", database.notificationDao().getRecentLogs().single().message)
+        }
+    }
+
+    @Test
+    fun `received transfer is posted as PIX_RECEIVED because that is the only credit the CRM reconciles`() = runTest {
+        MockWebServer().use { server ->
+            val manager = connectedManager(server)
+            val event = CapturedEventFactory(PixClassifier()).create(manager.active!!.id, "bank.app", "Nubank", "Transferência recebida na conta PJ", "Você recebeu R$ 12,00 de MARIA SOUZA LIMA na conta Nu Empresas.", 1_700_000_000_000)!!
+            database.notificationDao().insert(event)
+            server.enqueue(MockResponse().setBody("""{"results":[{"eventId":"${event.id}","status":"UNMATCHED","amountCents":1200}]}"""))
+
+            assertEquals(SyncRun.SUCCESS, createSyncer(manager).sync())
+
+            val request = checkNotNull(server.takeRequest(5, TimeUnit.SECONDS)) { "nenhum pedido chegou ao servidor: o evento não foi enviado" }
+            val body = request.body.readUtf8()
+            assertTrue(body, body.contains("\"transactionType\":\"PIX_RECEIVED\""))
+            assertTrue(body, body.contains("\"direction\":\"INCOMING\""))
+            assertTrue(body, body.contains("\"confidence\":\"MEDIUM\""))
+            assertFalse(body, body.contains("TRANSFER_RECEIVED"))
+            // Localmente o registro continua sendo o que o banco disse: uma transferência recebida.
+            assertEquals(TransactionType.TRANSFER_RECEIVED, database.notificationDao().getById(event.id)!!.transactionType)
         }
     }
 

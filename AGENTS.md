@@ -10,8 +10,13 @@ Licensed under AGPL-3.0 (see `LICENSE`).
 - One installation is bound to one company subdomain. Verify `/backend/companion/me` before storing
   credentials; a `connectionId` is created per binding and events never cross connections. Pending
   events may only be reassigned explicitly, for the same canonical host and company slug.
-- Money is integer cents (`Long`). Only incoming, received PIX with a positive amount and MEDIUM/HIGH
-  confidence may sync. Do not invent bank fixtures or HIGH-confidence templates.
+- Money is integer cents (`Long`). Only an incoming credit (received PIX, or a bank's "Transferência recebida")
+  with one positive amount and MEDIUM/HIGH confidence may sync. Do not invent bank fixtures or
+  HIGH-confidence templates; fixtures come from real notifications, with the payer name replaced.
+- Some banks never write "Pix": Nubank PJ announces it as "Transferência recebida na conta PJ". That is a
+  `TRANSFER_RECEIVED` locally (what the bank said) and goes to the CRM as `PIX_RECEIVED` (`TransactionType.wireName`),
+  the only credit the backend reconciles. Negative evidence (refund, failure, pending, sent) still wins.
+- A notification kept as "Capturado (não enviado)" must say why (`notSentReason`); never leave the user guessing.
 - Never log or export banking text, payer names or credentials.
 - The notification listener ships `enabled=false`; only `CompanionComponents` turns it on, once a
   company was bound.

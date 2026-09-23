@@ -29,7 +29,9 @@ Limite conhecido: sem token FCM, notificações com o app fechado dependem de a 
 
 ## Captura e entrega
 
-- O parser genérico pt-BR reconhece entradas de PIX com valor em centavos inteiros. Regras de falha, devolução, pendência e saída têm prioridade. Só `PIX_RECEIVED + INCOMING + valor positivo + MEDIUM/HIGH` é enviado.
+- O parser genérico pt-BR reconhece entradas de PIX com valor em centavos inteiros. Regras de falha, devolução, pendência e saída têm prioridade. Só um crédito (`PIX_RECEIVED` ou `TRANSFER_RECEIVED`) `+ INCOMING + valor único positivo + MEDIUM/HIGH` é enviado.
+- Alguns bancos nunca escrevem "Pix": o Nubank PJ avisa "Transferência recebida na conta PJ". Isso é gravado localmente como `TRANSFER_RECEIVED` (o que o banco disse) e vai ao CRM como `PIX_RECEIVED`, o único crédito que o CRM concilia. Como o app não consegue distinguir Pix de TED nesse texto, a confiança é sempre `MEDIUM`.
+- Um evento que fica em "Capturado (não enviado)" mostra, nos detalhes, **por que** não foi enviado.
 - **Não existem parsers bancários HIGH nesta versão:** faltam amostras reais anonimizadas. O genérico produz MEDIUM; casos não reconhecidos ficam no histórico e não são enviados.
 - O fingerprint inclui pacote, título/texto normalizados, valor e minuto da notificação. Repostagens no mesmo minuto são deduplicadas. Dois recebimentos de conteúdo idêntico no mesmo minuto também podem colidir: esta é uma limitação conhecida dessa heurística.
 - O evento é persistido antes do envio imediato (timeout HTTP de 10 segundos). Um worker expedited já fica agendado como recuperação. Listener e worker compartilham o mesmo sincronizador e `eventId`.

@@ -97,7 +97,7 @@ class EventSyncer @Inject constructor(private val dao: NotificationDao, private 
 
     private fun toRequest(event: CapturedEventEntity) = PixEventRequest(
         event.id, connections.deviceId, event.sourceApp, event.sourceAppName,
-        Instant.ofEpochMilli(event.notificationTimestamp).toString(), event.transactionType.name,
+        Instant.ofEpochMilli(event.notificationTimestamp).toString(), event.transactionType.wireName,
         event.direction.name, checkNotNull(event.amountCents), event.payerName, event.txid,
         event.endToEndId, event.bankReference, event.confidence.name, event.parserId
     )
