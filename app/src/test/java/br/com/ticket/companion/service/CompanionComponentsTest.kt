@@ -25,6 +25,12 @@ class CompanionComponentsTest {
         assertTrue(CompanionComponents.shouldEnableListener(hasActiveConnection = false, hasPastConnection = true))
     }
 
+    @Test fun `a rebind is only requested for an enabled listener that is not connected`() {
+        assertTrue(CompanionComponents.needsRebind(listenerEnabled = true, connected = false))
+        assertFalse(CompanionComponents.needsRebind(listenerEnabled = true, connected = true))
+        assertFalse(CompanionComponents.needsRebind(listenerEnabled = false, connected = false))
+    }
+
     @Test fun `the listener ships disabled and can be switched on and off`() {
         assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, context.packageManager.getComponentEnabledSetting(listener))
         assertFalse(CompanionComponents.isListenerEnabled(context))

@@ -70,7 +70,7 @@ Kotlin/Compose, Hilt, Room, Retrofit/OkHttp e WorkManager; JDK 17 e Android SDK 
 
 Testes locais usam JUnit, Robolectric, Room em memória e MockWebServer. A compilação release usa R8; as classes Gson da API e das conexões possuem regras de preservação. O APK sai em `app/build/outputs/apk/release/app-release.apk`.
 
-Esta adaptação mantém `versionName=1.5.2` e `versionCode=9` por decisão do projeto. Não representa uma publicação. Um APK de validação assinado com chave debug local não é um release distribuível.
+Versão atual: `versionName=1.5.5`, `versionCode=12` (a atualização pelo app só reconhece versão maior que a instalada). Não representa uma publicação até existir a tag. Um APK de validação assinado com chave debug local não é um release distribuível.
 
 Antes de produção, validar em aparelho real: acesso ao listener, notificação de banco real anonimizada, captura durante suspensão, recuperação offline, token de outra empresa, troca de empresa e os resultados MATCHED/AMBIGUOUS/UNMATCHED no CRM. Não houve deploy ou teste E2E contra a stack nesta etapa.
 

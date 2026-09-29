@@ -14,8 +14,8 @@ android {
         applicationId = "br.com.ticket.app" // o namespace/pacote Kotlin segue br.com.ticket.companion
         minSdk = 23 // Android 6 (mesmo piso do app WebView antigo)
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.5.2"
+        versionCode = 12
+        versionName = "1.5.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

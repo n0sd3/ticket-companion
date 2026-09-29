@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import br.com.ticket.companion.service.AppNotificationChannels
+import br.com.ticket.companion.service.CompanionComponents
 import br.com.ticket.companion.service.HeartbeatWorker
 import br.com.ticket.companion.util.ProcessNames
 import dagger.hilt.android.HiltAndroidApp
@@ -25,5 +26,6 @@ class TicketCompanionApp : Application(), Configuration.Provider {
     private fun startCompanion() {
         AppNotificationChannels.ensure(this)
         HeartbeatWorker.schedule(this)
+        CompanionComponents.ensureBound(this)
     }
 }

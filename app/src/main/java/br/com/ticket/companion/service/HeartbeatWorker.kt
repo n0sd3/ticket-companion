@@ -15,6 +15,7 @@ class HeartbeatWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         SyncWorker.enqueue(applicationContext)
+        CompanionComponents.ensureBound(applicationContext)
         return when (heartbeat.send()) {
             SyncRun.SUCCESS -> Result.success()
             SyncRun.RETRY -> Result.retry()

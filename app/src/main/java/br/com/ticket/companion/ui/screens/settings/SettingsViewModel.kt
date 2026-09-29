@@ -23,6 +23,12 @@ import javax.inject.Inject
 import android.net.Uri
 import br.com.ticket.companion.data.local.entities.DeliveryLogEntity
 import br.com.ticket.companion.util.NotificationsExporter
+import br.com.ticket.companion.domain.update.AppUpdater
+import br.com.ticket.companion.service.CaptureDiagnostics
+import br.com.ticket.companion.service.CompanionComponents
+import androidx.core.app.NotificationManagerCompat
+import java.text.DateFormat
+import java.util.Date
 
 data class MonitoredAppUi(val packageName: String, val displayName: String, val isEnabled: Boolean, val icon: Drawable? = null)
 data class InstalledAppUi(val packageName: String, val displayName: String, val icon: Drawable?)
@@ -39,7 +45,10 @@ data class SettingsUiState(
     val appVersion: String = "",
     val logs: List<DeliveryLogEntity> = emptyList(),
     val showLogs: Boolean = false,
-    val exportMessage: String? = null
+    val exportMessage: String? = null,
+    val updateMessage: String? = null,
+    val diagnostics: List<String> = emptyList(),
+    val updateBusy: Boolean = false
 )
 
 @HiltViewModel
@@ -61,8 +70,48 @@ class SettingsViewModel @Inject constructor(
             serverUrl = active?.serverUrl.orEmpty(), companyName = active?.companyName.orEmpty(), tokenName = active?.tokenName.orEmpty(),
             monitoredApps = monitoredAppDao.all().map { MonitoredAppUi(it.packageId, it.label, it.active, icon(it.packageId)) },
             notifySyncSuccess = secureStorage.notifySyncSuccess, notifySyncError = secureStorage.notifySyncError,
-            appVersion = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "1.5.2"
+            appVersion = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "1.5.5"
         )
+    }
+
+    /** Procura a release mais nova, baixa e abre o instalador do Android: dispensa transferir o APK à mão. */
+    fun updateApp() {
+        if (_uiState.value.updateBusy) return
+        val updater = AppUpdater(context)
+        fun say(message: String?, busy: Boolean = true) { _uiState.value = _uiState.value.copy(updateMessage = message, updateBusy = busy) }
+        say("Procurando atualização…")
+        viewModelScope.launch {
+            try {
+                val info = withContext(Dispatchers.IO) { updater.check(_uiState.value.appVersion) }
+                if (info == null) return@launch say("Você já está na versão mais recente (${_uiState.value.appVersion}).", busy = false)
+                if (!updater.canInstall()) {
+                    context.startActivity(updater.permissionIntent())
+                    return@launch say("Permita instalar apps deste aplicativo e toque em Atualizar de novo.", busy = false)
+                }
+                val apk = withContext(Dispatchers.IO) { updater.download(info) { say("Baixando ${info.version}… $it%") } }
+                say("Versão ${info.version} baixada. Confirme a instalação.", busy = false)
+                context.startActivity(updater.installIntent(apk))
+            } catch (_: Exception) {
+                say("Não foi possível atualizar. Verifique a conexão e tente de novo.", busy = false)
+            }
+        }
+    }
+
+    /** Cada linha é uma etapa por onde a notificação passa; a primeira "não" é onde a captura morre. */
+    fun refreshDiagnostics() {
+        val snap = CaptureDiagnostics.snapshot()
+        val granted = NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+        val lines = listOf(
+            "Acesso a notificações concedido: ${if (granted) "sim" else "NÃO"}",
+            "Listener habilitado no app: ${if (CompanionComponents.isListenerEnabled(context)) "sim" else "NÃO"}",
+            "Listener conectado agora: ${if (snap.listenerConnected) "sim" else "NÃO"}",
+            "Empresa vinculada: ${if (connections.active != null || connections.lastConnection != null) "sim" else "NÃO"}",
+            "Apps monitorados ativos: ${_uiState.value.monitoredApps.filter { it.isEnabled }.joinToString { it.packageName }.ifEmpty { "nenhum" }}",
+            "Notificações vistas desde a abertura: ${snap.seen}",
+            "Última: ${snap.lastPackage ?: "nenhuma"}" + if (snap.lastAt > 0) " às ${DateFormat.getTimeInstance().format(Date(snap.lastAt))}" else "",
+            "Destino da última: ${snap.lastOutcome ?: "—"}"
+        )
+        _uiState.value = _uiState.value.copy(diagnostics = lines)
     }
 
     fun disconnect() { connections.disconnect(); _uiState.value = _uiState.value.copy(serverUrl = "") }

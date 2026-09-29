@@ -102,6 +102,10 @@ fun SettingsScreen(onNavigateBack: () -> Unit, onDisconnected: () -> Unit, viewM
             item { Preference("Notificar envio", state.notifySyncSuccess, viewModel::setNotifySyncSuccess) }
             item { Preference("Notificar erro", state.notifySyncError, viewModel::setNotifySyncError) }
             if (Build.VERSION.SDK_INT >= 33) item { TextButton({ permission.launch(Manifest.permission.POST_NOTIFICATIONS) }) { Text("Permitir alertas no Android") } }
+            item { Button(viewModel::updateApp, Modifier.fillMaxWidth(), enabled = !state.updateBusy) { Text("Atualizar aplicativo") } }
+            state.updateMessage?.let { message -> item { Text(message) } }
+            item { OutlinedButton(viewModel::refreshDiagnostics, Modifier.fillMaxWidth()) { Text("Diagnóstico da captura") } }
+            items(state.diagnostics) { line -> Text(line, style = MaterialTheme.typography.bodySmall) }
             item { OutlinedButton(viewModel::showLogs, Modifier.fillMaxWidth()) { Text("Logs de sincronização") } }
             item { OutlinedButton({ export.launch("ticket-companion-diagnostico.json") }, Modifier.fillMaxWidth()) { Text("Exportar diagnóstico sem dados pessoais") } }
             state.exportMessage?.let { message -> item { Text(message) } }

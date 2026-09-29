@@ -7,7 +7,10 @@ import android.content.Intent
 /** Depois de reiniciar o aparelho, retoma a fila de envio pendente. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action in RESTART_ACTIONS) SyncWorker.enqueue(context)
+        if (intent.action in RESTART_ACTIONS) {
+            SyncWorker.enqueue(context)
+            CompanionComponents.ensureBound(context)
+        }
     }
 
     private companion object {

@@ -42,6 +42,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import br.com.ticket.companion.BuildConfig
 import br.com.ticket.companion.domain.web.NavigationDecision
+import br.com.ticket.companion.domain.web.WebChromeBar
 import br.com.ticket.companion.domain.web.WebNavigationPolicy
 import br.com.ticket.companion.domain.web.WebOrigin
 import br.com.ticket.companion.ui.MainActivity
@@ -193,6 +194,10 @@ class WebActivity : ComponentActivity() {
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ -> download(url, userAgent, contentDisposition, mimetype) }
     }
 
+    private fun updateBar(url: String?) {
+        if (WebChromeBar.showsOn(url)) actionBar?.show() else actionBar?.hide()
+    }
+
     private fun startBackgroundService() {
         ContextCompat.startForegroundService(this, Intent(this, TicketWebService::class.java).putExtra(EXTRA_ORIGIN, origin))
     }
@@ -296,7 +301,11 @@ class WebActivity : ComponentActivity() {
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
             progressBar.visibility = View.VISIBLE
+            updateBar(url)
         }
+
+        // A SPA troca de rota sem recarregar a página: sem isto a barra ficaria presa ao estado da primeira carga.
+        override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) = updateBar(url)
 
         override fun onPageFinished(view: WebView, url: String?) {
             progressBar.visibility = View.GONE
