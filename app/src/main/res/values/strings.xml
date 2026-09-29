@@ -1,90 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">OpenMonetis Companion</string>
+    <string name="app_name">Ticket</string>
+    <string name="web_label">Atendimento</string>
 
-    <!-- Setup -->
-    <string name="setup_server_title">Configurar Servidor</string>
-    <string name="setup_server_description">Insira a URL do seu servidor OpenMonetis</string>
-    <string name="setup_server_url_label">URL do servidor</string>
-    <string name="setup_server_url_placeholder">https://openmonetis.exemplo.com</string>
-    <string name="setup_verify_connection">Verificar Conexão</string>
-    <string name="setup_token_title">Autenticação</string>
-    <string name="setup_token_description">Cole o token de API gerado no OpenMonetis</string>
-    <string name="setup_token_label">Token de API</string>
-    <string name="setup_token_placeholder">os_xxxxxxxxxxxx</string>
-    <string name="setup_connect">Conectar</string>
-
-    <!-- Home -->
-    <string name="home_title">Início</string>
-    <string name="home_pending_notifications">Notificações Pendentes</string>
-    <string name="home_synced_today">Enviados Hoje</string>
-    <string name="home_last_sync">Última sincronização</string>
-    <string name="home_never_synced">Nunca sincronizado</string>
-
-    <!-- History -->
-    <string name="history_title">Histórico</string>
-    <string name="history_empty">Nenhuma notificação capturada</string>
-    <string name="history_filter_pending">Pendentes</string>
-    <string name="history_filter_sent">Enviados</string>
-
-    <!-- Settings -->
-    <string name="settings_title">Configurações</string>
-    <string name="settings_server">Servidor</string>
-    <string name="settings_server_url">URL</string>
-    <string name="settings_server_status">Status</string>
-    <string name="settings_server_connected">Conectado</string>
-    <string name="settings_server_disconnected">Desconectado</string>
-    <string name="settings_change_server">Alterar Servidor</string>
-    <string name="settings_token">Token</string>
-    <string name="settings_token_name">Nome</string>
-    <string name="settings_token_created">Criado em</string>
-    <string name="settings_disconnect">Desconectar</string>
-    <string name="settings_monitored_apps">Apps Monitorados</string>
-    <string name="settings_manage_apps">Gerenciar Apps</string>
-    <string name="settings_notification_permission">Permissão de Notificações</string>
-    <string name="settings_grant_permission">Conceder Permissão</string>
-    <string name="settings_permission_granted">Permissão concedida</string>
-    <string name="settings_about">Sobre</string>
-    <string name="settings_version">Versão</string>
-
-    <!-- Keywords Settings -->
-    <string name="settings_customization">Personalização</string>
-    <string name="settings_keywords_title">Gatilhos de Captura</string>
-    <string name="settings_keywords_subtitle">Personalizar palavras que ativam a captura</string>
-    <string name="settings_keywords_trigger">Gatilhos de Captura</string>
-    <string name="settings_keywords_trigger_desc">Palavras que ativam a captura da notificação</string>
-    <string name="settings_keywords_add_trigger">Adicionar Gatilho</string>
-    <string name="settings_keywords_add">Adicionar</string>
-    <string name="settings_keywords_term">Termo</string>
-    <string name="settings_keywords_reset">Restaurar Padrões</string>
-    <string name="settings_keywords_reset_confirm">Isso irá restaurar todos os termos para os valores padrão. Deseja continuar?</string>
-
-    <!-- Common -->
-    <string name="cancel">Cancelar</string>
-    <string name="confirm">Confirmar</string>
-    <string name="save">Salvar</string>
-    <string name="delete">Excluir</string>
-    <string name="error">Erro</string>
-    <string name="success">Sucesso</string>
-    <string name="loading">Carregando…</string>
-    <string name="retry">Tentar novamente</string>
-
-    <!-- Errors -->
-    <string name="error_connection_failed">Não foi possível conectar ao servidor</string>
-    <string name="error_invalid_url">URL inválida</string>
-    <string name="error_invalid_token">Token inválido ou expirado</string>
-    <string name="error_network">Erro de conexão</string>
-    <string name="error_unknown">Erro desconhecido</string>
-
-    <!-- Notifications -->
     <string name="notification_channel_sync">Sincronização</string>
-    <string name="notification_channel_sync_description">Notificações de sincronização</string>
-    <string name="notification_channel_sync_results">Resultados de envio</string>
-    <string name="notification_channel_sync_results_description">Notificações de lançamentos enviados ou com erro</string>
-    <string name="notification_sync_success">%d notificações sincronizadas</string>
-    <string name="notification_sync_failed">Falha na sincronização</string>
-    <string name="notification_entry_sent_title">Lançamento enviado com sucesso</string>
-    <string name="notification_entry_failed_title">Erro ao enviar lançamento</string>
-    <string name="notification_entry_generic_success">Lançamento enviado</string>
-    <string name="notification_entry_generic_error">Erro no envio</string>
+    <string name="notification_channel_sync_description">Andamento do envio de eventos ao Ticket</string>
+    <string name="notification_channel_sync_results">Resultado dos envios</string>
+    <string name="notification_channel_sync_results_description">Avisa quando um evento é entregue ou falha</string>
 </resources>

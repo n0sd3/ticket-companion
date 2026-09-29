@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
-    android:src="@mipmap/ic_launcher_monochrome"
-    android:gravity="center" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5,7h14a1.5,1.5 0 0 1 1.5,1.5v2a1.5,1.5 0 0 0 0,3v2a1.5,1.5 0 0 1 -1.5,1.5h-14a1.5,1.5 0 0 1 -1.5,-1.5v-2a1.5,1.5 0 0 0 0,-3v-2a1.5,1.5 0 0 1 1.5,-1.5z M9,10v1.5h2.25v4h1.5v-4h2.25v-1.5z" />
+</vector>

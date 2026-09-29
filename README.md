@@ -1,252 +1,82 @@
-<p align="center">
-  <img src="./logo.png" alt="OpenMonetis Companion Logo" height="80" />
-</p>
+# Ticket (app Android)
 
-<p align="center">
-  App Android para captura automática de notificações bancárias e integração com o OpenMonetis.
-</p>
+App Android 6+ (API 23) do Ticket CRM com duas funções independentes, no mesmo APK. O app se chama **Ticket** (`br.com.ticket.app`); "Companion" é o nome da função de captura de PIX, e o código Kotlin continua no pacote `br.com.ticket.companion`.
 
-> **Requer o OpenMonetis instalado.** Este app é um complemento que captura notificações e envia para sua instância do [OpenMonetis](https://github.com/felipegcoutinho/openmonetis).
+- **Companion (captura de PIX):** captura notificações dos bancos escolhidos pelo usuário e envia eventos de **PIX recebido** para uma empresa do Ticket CRM. O CRM decide a conciliação; o Companion não confirma cobranças sozinho.
+- **Atendimento web:** abre o Ticket (a SPA) da empresa dentro do app, com upload/câmera, downloads, localização e notificações nativas — substitui o antigo app WebView do CRM.
 
-[![Android](https://img.shields.io/badge/Android-12+-3DDC84?style=flat-square&logo=android)](https://developer.android.com/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin)](https://kotlinlang.org/)
-[![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?style=flat-square&logo=jetpack-compose)](https://developer.android.com/jetpack/compose)
-[![License](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-orange?style=flat-square&logo=creative-commons)](LICENSE)
+## Configurar
 
----
+1. No Ticket da empresa, abra a gestão de Companion e gere um token de aparelho.
+2. Informe no app `https://empresa.seu-dominio` e o token `tcmp_…`.
+3. Toque em **Verificar**, confira o nome da empresa e depois em **Confirmar**.
+4. Conceda o acesso a notificações pela Home e selecione os bancos em **Configurações → Adicionar app**. Nenhum aplicativo é monitorado por padrão.
+5. Se desejar alertas de envio, habilite a permissão correspondente em Configurações.
 
-## Índice
+O servidor precisa resolver o subdomínio da empresa e expor `/backend/companion/me`, `/backend/companion/pix-events` e `/backend/companion/heartbeat`. O domínio principal sem tenant é recusado. O token é vinculado ao UUID desta instalação.
 
-- [Sobre o Projeto](#sobre-o-projeto)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Instalação](#instalação)
-- [Configuração](#configuração)
-- [Arquitetura](#arquitetura)
-- [Desenvolvimento](#desenvolvimento)
-- [Contribuindo](#contribuindo)
+**Trocar empresa** aposenta a conexão e abre o setup completo. Seus eventos antigos continuam no histórico, identificados pela empresa anterior; nunca são enviados para a nova empresa. Após verificar novamente o mesmo host e slug, é possível escolher **Confirmar e reenviar pendentes desta empresa**. O `eventId` é preservado.
 
----
+## Atendimento web
 
-## Sobre o Projeto
+- **Aparelho só de atendimento** (atendente, entregador): informe `https://empresa.seu-dominio` no setup e toque em **Abrir só o atendimento**. Nas próximas aberturas o app entra direto no atendimento; **Ajustes do app** (menu ⋮ do atendimento) volta ao setup. Nesse modo o listener de notificações permanece **desligado**: o app nem aparece em "Acesso às notificações".
+- **Aparelho do caixa** (com Companion vinculado): o botão de globo na Home abre o atendimento da mesma empresa do Companion — o endereço vem da conexão verificada e não é digitado de novo.
+- O WebView fica **travado na origem da empresa** (esquema, host e porta). Outros sites abrem no navegador do aparelho; esquemas como `file:`, `content:`, `intent:` e `javascript:` são bloqueados. Câmera, microfone, localização e a ponte de notificações só valem para essa origem (câmera/microfone/localização são pedidos em tempo de execução, no primeiro uso).
+- Roda no processo `:web`, separado do Companion: um estouro de memória do WebView não derruba a captura de PIX. Enquanto o atendimento está aberto em segundo plano, um serviço em primeiro plano ("Atendimento ativo") mantém o processo vivo; ele para quando você sai do atendimento e o Android 15 limita esse tipo de serviço (cerca de 6 h por dia).
+- A ponte `window.Notification` → notificação nativa continua igual à do app antigo, mas com texto limitado em tamanho e aceita só da origem travada.
 
-**OpenMonetis Companion** é o app Android oficial do ecossistema OpenMonetis. Ele captura automaticamente notificações de transações dos seus apps de banco e fintech, extrai as informações relevantes (valor, descrição) e envia para a **Caixa de Entrada** do OpenMonetis como pré-lançamentos.
+Limite conhecido: sem token FCM, notificações com o app fechado dependem de a sessão web continuar conectada. Web Push não existe dentro de WebView.
 
-### Como funciona
+## Captura e entrega
 
-1. O app escuta notificações dos apps de banco configurados
-2. Quando detecta uma transação (Pix recebido, compra no cartão, etc.), extrai os dados
-3. Envia automaticamente para sua instância do OpenMonetis via API
-4. As transações aparecem na "Caixa de Entrada" para você revisar e aprovar
+- O parser genérico pt-BR reconhece entradas de PIX com valor em centavos inteiros. Regras de falha, devolução, pendência e saída têm prioridade. Só um crédito (`PIX_RECEIVED` ou `TRANSFER_RECEIVED`) `+ INCOMING + valor único positivo + MEDIUM/HIGH` é enviado.
+- Alguns bancos nunca escrevem "Pix": o Nubank PJ avisa "Transferência recebida na conta PJ". Isso é gravado localmente como `TRANSFER_RECEIVED` (o que o banco disse) e vai ao CRM como `PIX_RECEIVED`, o único crédito que o CRM concilia. Como o app não consegue distinguir Pix de TED nesse texto, a confiança é sempre `MEDIUM`.
+- Um evento que fica em "Capturado (não enviado)" mostra, nos detalhes, **por que** não foi enviado.
+- **Não existem parsers bancários HIGH nesta versão:** faltam amostras reais anonimizadas. O genérico produz MEDIUM; casos não reconhecidos ficam no histórico e não são enviados.
+- O fingerprint inclui pacote, título/texto normalizados, valor e minuto da notificação. Repostagens no mesmo minuto são deduplicadas. Dois recebimentos de conteúdo idêntico no mesmo minuto também podem colidir: esta é uma limitação conhecida dessa heurística.
+- O evento é persistido antes do envio imediato (timeout HTTP de 10 segundos). Um worker expedited já fica agendado como recuperação. Listener e worker compartilham o mesmo sincronizador e `eventId`.
+- A fila envia até 20 eventos por chamada. O próximo horário elegível de cada evento usa backoff de 30 segundos até 1 hora (ou `Retry-After` maior) e termina após 20 tentativas por evento. O backoff nativo do WorkManager e o Android podem executar depois desse horário: não há garantia de execução dentro de 1 hora. Falhas terminais podem ser reenviadas explicitamente no histórico.
+- 401/403 e redirects pedem reconexão. 400/409 são terminais; `ERROR` de um item não invalida os irmãos do lote. `REJECTED` é um resultado entregue ao CRM.
+- Heartbeat informa acesso ao listener e versão do app a cada evento e pelo WorkManager a cada 15 minutos. O Android pode adiar trabalho em segundo plano; não é um relógio exato.
 
-### Por que usar
+O histórico fica na Home, com resultado do CRM e detalhes locais. Configurações contém os últimos 100 logs de envio (retenção de 30 dias) e exportação de diagnóstico escolhida pelo seletor de arquivos do Android. A exportação contém IDs técnicos, valor, classificação e status; **não contém texto bancário, nome do pagador, referências bancárias ou credenciais**.
 
-- **Economia de tempo:** Não precisa digitar cada transação manualmente
-- **Precisão:** Valores e descrições são capturados diretamente da notificação
-- **Controle:** Você ainda revisa e aprova antes de virar um lançamento oficial
-- **Privacidade:** Seus dados ficam no SEU servidor, não em nuvens de terceiros
+## Segurança e armazenamento
 
----
+App novo `br.com.ticket.app`, Room v1 `ticket_companion.db` e preferências criptografadas `ticket_companion_secure_prefs`: não há migração de dados de versões anteriores. O schema está em `app/schemas` e inclui `captured_events`, `app_configs` e `sync_logs`.
 
-## Features
+O WebView do atendimento não tem `allowBackup`, não acessa `file:`/`content:` e bloqueia conteúdo misto. O release aceita HTTPS, sem IP literal, userinfo, query ou fragmento. O path digitado é descartado: o prefixo da API é sempre `/backend/`. Credenciais só são anexadas ao origin verificado (esquema, host, porta). Redirects são bloqueados; release não tem HTTP logging. Debug libera cleartext apenas para `localhost` e `10.0.2.2`. Backups e transferência das credenciais/banco estão desabilitados.
 
-- Escuta notificações em tempo real e filtra apenas apps de banco configurados
-- Extrai valor e descrição automaticamente, detectando tipo de transação (Pix, cartão, transferência)
-- Envio automático para o OpenMonetis com retry em caso de falha
-- Sincronização em segundo plano via WorkManager
-- Autenticação via token de API com EncryptedSharedPreferences
-- Histórico de notificações capturadas com filtros por status
-- Setup guiado de conexão com servidor
-- Gatilhos de captura personalizáveis
-- Tema claro/escuro (segue sistema)
+## Compatibilidade (Android 6 em diante)
 
----
-
-## Tech Stack
-
-| Componente | Tecnologia |
-|------------|------------|
-| **Linguagem** | Kotlin |
-| **Min SDK** | Android 12 (API 31) |
-| **UI** | Jetpack Compose + Material 3 |
-| **Arquitetura** | MVVM + Clean Architecture |
-| **DI** | Hilt |
-| **Database** | Room |
-| **Network** | Retrofit + OkHttp |
-| **Async** | Coroutines + Flow |
-| **Background** | WorkManager |
-| **Segurança** | EncryptedSharedPreferences |
-
----
-
-## Instalação
-
-Baixe a última versão do APK na página de [Releases](https://github.com/felipegcoutinho/openmonetis-companion/releases).
-
-### Requisitos
-
-- Android 12 ou superior
-- Instância do OpenMonetis configurada e acessível
-- Token de API gerado no OpenMonetis
-
-### Instalação Manual
-
-1. Baixe o arquivo `openmonetis-companion-vX.X.X.apk`
-2. No Android, habilite "Instalar apps de fontes desconhecidas" para seu navegador/gerenciador de arquivos
-3. Abra o APK e instale
-4. Siga o assistente de configuração
-
----
-
-## Configuração
-
-### 1. Gerar Token no OpenMonetis
-
-1. Acesse sua instância do OpenMonetis
-2. Vá em **Ajustes → OpenMonetis Companion**
-3. Clique em **Gerar Token**
-4. Copie o token gerado (ele só é mostrado uma vez!)
-
-### 2. Configurar o App
-
-1. Abra o OpenMonetis Companion
-2. Insira a URL do seu servidor (ex: `https://openmonetis.com`)
-3. Cole o token de API
-4. Clique em **Conectar**
-
-### 3. Permissões
-
-O app solicitará permissão de **Acesso a Notificações**:
-
-1. Toque em **Conceder Permissão**
-2. Encontre "OpenMonetis Companion" na lista
-3. Ative a permissão
-
-### 4. Selecionar Apps
-
-Por padrão, os principais apps de banco já vêm configurados. Você pode ajustar em **Configurações → Apps Monitorados**.
-
----
-
-## Arquitetura
-
-### Estrutura do Projeto
-
-```
-app/src/main/java/br/com/openmonetis/companion/
-├── OpenMonetisApp.kt              # Application class (Hilt)
-├── di/                           # Módulos de Injeção de Dependência
-│   ├── AppModule.kt
-│   ├── DatabaseModule.kt
-│   └── NetworkModule.kt
-├── data/
-│   ├── local/                    # Room Database
-│   │   ├── AppDatabase.kt
-│   │   ├── dao/
-│   │   └── entities/
-│   ├── remote/                   # Retrofit API
-│   │   ├── api/
-│   │   └── dto/
-│   └── repository/               # Repositórios
-├── domain/
-│   ├── model/                    # Modelos de domínio
-│   └── repository/               # Interfaces
-├── service/
-│   ├── NotificationListenerService.kt  # Captura de notificações
-│   └── SyncWorker.kt                   # Sincronização em background
-├── ui/
-│   ├── theme/                    # Material 3 Theme
-│   ├── navigation/               # Navigation Compose
-│   └── screens/
-│       ├── setup/                # Tela de configuração inicial
-│       ├── home/                 # Tela principal
-│       ├── settings/             # Configurações
-│       ├── history/              # Histórico
-│       └── logs/                 # Logs de sincronização
-└── util/                         # Utilitários
-```
-
-### Comunicação com OpenMonetis
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/api/health` | Verifica conectividade |
-| POST | `/api/inbox` | Envia notificação única |
-| POST | `/api/inbox/batch` | Envia múltiplas notificações |
-
----
+- `minSdk 23`, o mesmo piso do app WebView antigo: atendentes com Android 6–10 usam o app normalmente. `java.time` usa *core library desugaring*.
+- Trabalho *expedited* do WorkManager só é pedido no Android 12+ (antes exigiria serviço em primeiro plano); nas versões anteriores o envio imediato do listener e o worker comum cobrem o caso. Canais de notificação só existem no Android 8+. O ícone adaptativo é do Android 8+; antes disso vale um ícone simples.
+- `usesCleartextTraffic="false"` é explícito porque a configuração de rede (`network_security_config`) só vale a partir do Android 7.
+- Riscos que só um aparelho antigo confirma: chaves do Android Keystore mais frágeis no Android 6–7 (o `EncryptedSharedPreferences` pode falhar em alguns fabricantes e o app não tem plano B), cadeia de certificados da Let's Encrypt em Android anterior ao 7.1.1 (depende do certificado que o Cloudflare serve) e um *Android System WebView* desatualizado, que pode não rodar a SPA.
+- Instalar este app **não atualiza** o antigo `uk.edsonnet.ticketz`: os IDs são diferentes, então os dois coexistem até você desinstalar o antigo (a sessão web precisa de novo login).
 
 ## Desenvolvimento
 
-### Pré-requisitos
-
-- Android Studio
-- JDK 17
-- Android SDK 35
-
-### Setup
-
-1. Clone o repositório
-   ```bash
-   git clone https://github.com/felipegcoutinho/openmonetis-companion.git
-   cd openmonetis-companion
-   ```
-
-2. Abra no Android Studio e sincronize o Gradle
-
-3. Execute no emulador ou dispositivo: **Run → Run 'app'**
-
-### Build Release
+Kotlin/Compose, Hilt, Room, Retrofit/OkHttp e WorkManager; JDK 17 e Android SDK 35.
 
 ```bash
-./gradlew assembleRelease
+./gradlew testDebugUnitTest lintDebug
+./gradlew assembleRelease \
+  -Pandroid.injected.signing.store.file=/caminho/keystore.jks \
+  -Pandroid.injected.signing.store.password=... \
+  -Pandroid.injected.signing.key.alias=... \
+  -Pandroid.injected.signing.key.password=...
 ```
 
-O APK será gerado em `app/build/outputs/apk/release/`.
+Testes locais usam JUnit, Robolectric, Room em memória e MockWebServer. A compilação release usa R8; as classes Gson da API e das conexões possuem regras de preservação. O APK sai em `app/build/outputs/apk/release/app-release.apk`.
 
----
+Versão atual: `versionName=1.5.5`, `versionCode=12` (a atualização pelo app só reconhece versão maior que a instalada). Não representa uma publicação até existir a tag. Um APK de validação assinado com chave debug local não é um release distribuível.
 
-## Contribuindo
-
-Contribuições são bem-vindas!
-
-1. **Fork** o projeto
-2. **Clone** seu fork
-   ```bash
-   git clone https://github.com/seu-usuario/openmonetis-companion.git
-   ```
-3. **Crie uma branch** para sua feature
-   ```bash
-   git checkout -b feature/minha-feature
-   ```
-4. **Commit** suas mudanças
-5. **Push** e abra um **Pull Request**
-
-### Adicionando Suporte a Novo Banco
-
-1. Identificar o `packageName` do app
-2. Criar regras de parsing em `NotificationParser`
-3. Adicionar à lista de apps suportados
-4. Testar com notificações reais
-
----
+Antes de produção, validar em aparelho real: acesso ao listener, notificação de banco real anonimizada, captura durante suspensão, recuperação offline, token de outra empresa, troca de empresa e os resultados MATCHED/AMBIGUOUS/UNMATCHED no CRM. Não houve deploy ou teste E2E contra a stack nesta etapa.
 
 ## Licença
 
-Este projeto está licenciado sob a **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International** (CC BY-NC-SA 4.0).
-
----
-
-## Links
-
-- **OpenMonetis (Web App):** [github.com/felipegcoutinho/openmonetis](https://github.com/felipegcoutinho/openmonetis)
-- **Releases:** [github.com/felipegcoutinho/openmonetis-companion/releases](https://github.com/felipegcoutinho/openmonetis-companion/releases)
-- **Issues:** [github.com/felipegcoutinho/openmonetis-companion/issues](https://github.com/felipegcoutinho/openmonetis-companion/issues)
-
----
-
-<div align="center">
-
-**Parte do ecossistema [OpenMonetis](https://github.com/felipegcoutinho/openmonetis)**
-
-</div>
+Distribuído sob a **GNU Affero General Public License v3.0** (`LICENSE`), a mesma do Ticket CRM. Quem
+distribui uma versão modificada precisa oferecer o código-fonte correspondente aos usuários. O
+[código-fonte](https://github.com/n0sd3/ticket-companion) também é acessível dentro do app, em
+**Configurações**.

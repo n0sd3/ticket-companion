@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.OpenMonetisCompanion" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- Telas em Compose: barras do sistema transparentes, o app desenha por baixo delas. -->
+    <style name="Theme.TicketCompanion" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <!-- Atendimento web: barra de ação clássica. -->
+    <style name="Theme.TicketCompanion.WebBase" parent="android:Theme.Material.Light">
+        <item name="android:colorAccent">#2F5BEA</item>
+        <item name="android:statusBarColor">#12141A</item>
+        <item name="android:navigationBarColor">#12141A</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <style name="Theme.TicketCompanion.Web" parent="Theme.TicketCompanion.WebBase" />
 </resources>

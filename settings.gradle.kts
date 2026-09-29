@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OpenMonetisCompanion"
+rootProject.name = "TicketCompanion"
 include(":app")

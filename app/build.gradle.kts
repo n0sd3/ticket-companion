@@ -7,15 +7,15 @@ plugins {
 }
 
 android {
-    namespace = "br.com.openmonetis.companion"
+    namespace = "br.com.ticket.companion"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "br.com.openmonetis.companion"
-        minSdk = 31 // Android 12
+        applicationId = "br.com.ticket.app" // o namespace/pacote Kotlin segue br.com.ticket.companion
+        minSdk = 23 // Android 6 (mesmo piso do app WebView antigo)
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.5.2"
+        versionCode = 12
+        versionName = "1.5.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -45,6 +45,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true // java.time no Android 6-7 (minSdk 23)
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -57,9 +58,17 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
+ksp { arg("room.schemaLocation", "$projectDir/schemas") }
+
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -100,25 +109,20 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime.ktx)
 
-    // DataStore & Security
-    implementation(libs.datastore.preferences)
+    // Security
     implementation(libs.security.crypto)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-
-    // ML Kit (QR Code)
-    implementation(libs.mlkit.barcode.scanning)
-
-    // CameraX
-    implementation(libs.camera.core)
-    implementation(libs.camera.camera2)
-    implementation(libs.camera.lifecycle)
-    implementation(libs.camera.view)
 
     // Accompanist
     implementation(libs.accompanist.drawablepainter)
 
     // Tests
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.room:room-testing:2.6.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }
