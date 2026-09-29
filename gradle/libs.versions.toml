@@ -11,13 +11,10 @@ room = "2.6.1"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 workManager = "2.10.0"
-datastore = "1.1.1"
 securityCrypto = "1.1.0-alpha06"
 navigationCompose = "2.8.5"
 coroutines = "1.9.0"
 ksp = "2.1.0-1.0.29"
-mlkitBarcodeScanning = "17.3.0"
-cameraX = "1.4.1"
 accompanist = "0.34.0"
 
 [libraries]
@@ -61,21 +58,11 @@ okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor",
 # WorkManager
 work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 
-# DataStore & Security
-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+# Security
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-
-# ML Kit (QR Code scanning)
-mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkitBarcodeScanning" }
-
-# CameraX
-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraX" }
-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraX" }
-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
 
 # Accompanist
 accompanist-drawablepainter = { group = "com.google.accompanist", name = "accompanist-drawablepainter", version.ref = "accompanist" }

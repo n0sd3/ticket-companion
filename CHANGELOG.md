@@ -1,70 +1,55 @@
 # Changelog
 
-Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
+Mudanças notáveis do app Android do Ticket CRM. Formato baseado em
+[Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
-O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
-e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
+## 1.5.5 (código 12) — local, sem tag
 
-## [1.5.2] - 2026-05-30
+- **Captura:** o app pede o vínculo do listener de notificações ao abrir, a cada heartbeat (15 min) e no
+  boot quando ele está habilitado e desconectado. Num Xiaomi/HyperOS o listener ficava aprovado mas fora da
+  lista de listeners vivos do Android, e a captura de PIX parava sem nenhum aviso.
 
-### Adicionado
+## 1.5.4 (código 11) — local, sem tag
 
-- Links para os repositórios do Companion, do OpenMonetis e para o perfil do autor na seção Sobre
-- Testes de regressão para extração de estabelecimentos em notificações do Cartão Mercado Pago
+- **Diagnóstico da captura:** Ajustes → "Diagnóstico da captura" mostra cada etapa (acesso a notificações,
+  listener conectado, empresa vinculada, apps monitorados) e o destino da última notificação vista
+  (sem texto, app não monitorado, capturada…). Guarda só pacote e horário, nunca o texto.
 
-### Alterado
+## 1.5.3 (código 10) — local, sem tag
 
-- Cards de notificações destacam a descrição normalizada e mantêm o texto original nos detalhes
-- Card de permissão de captura aparece na tela inicial somente quando a permissão está desabilitada
-- Resumo de apps monitorados na tela inicial abre os ajustes e destaca quando nenhum app está configurado
-- Permissão para exibir alertas do Companion é solicitada somente ao ativar um alerta
-- Seção Sobre consolidada para reduzir o espaço ocupado na tela de ajustes
+- **Captura:** o listener volta a pedir reconexão quando o Android o desconecta e passa a receber também
+  notificações silenciosas (o Nubank deixou de capturar). Lê o texto de `TEXT_LINES`/`SUB_TEXT` quando
+  `BIG_TEXT`/`TEXT` vêm vazios e registra no log as notificações descartadas.
+- **Atendimento:** a barra de título só aparece na tela de login.
+- **Atualização pelo app:** Ajustes → "Atualizar aplicativo" baixa a última release do GitHub e abre o
+  instalador do Android (exige `REQUEST_INSTALL_PACKAGES`).
 
-### Corrigido
+## 1.5.2 (código 9) — base local, sem publicação
 
-- Extração do estabelecimento em notificações achatadas do Cartão Mercado Pago, ignorando o texto informativo da próxima fatura
-- Card de permissão da tela inicial agora abre corretamente as configurações nativas de captura de notificações
+Versão preservada por decisão do projeto. Esta entrada resume o app até aqui; nada foi
+publicado, marcado com tag nem distribuído.
 
-## [1.0.4] - 2026-02-16
+### Captura de PIX (Companion)
 
-### Alterado
+- Cada instalação é vinculada ao subdomínio de **uma** empresa do Ticket CRM. O setup verifica
+  o par endereço + token (`/backend/companion/me`) e só grava a conexão depois de confirmado.
+- Classifica notificações de banco em tipo, direção e confiança, com valores em centavos
+  inteiros. Só PIX recebido, com valor positivo e confiança média ou alta, é enviado.
+- Fila persistente (Room) com deduplicação por fingerprint, envio imediato + worker, lotes de
+  20, retry com backoff limitado e resultado da conciliação por evento.
+- Rede presa ao host verificado: sem redirects, sem `Authorization` para outro destino, sem
+  log HTTP no release. Eventos capturados sob uma empresa nunca são enviados a outra.
+- Heartbeat, histórico com resultado do CRM, logs de envio e exportação de diagnóstico sem
+  texto bancário, pagador ou credenciais.
 
-- Projeto renomeado de **OpenSheets Companion** para **OpenMonetis Companion**
-- Package Android: `br.com.opensheets.companion` → `br.com.openmonetis.companion`
-- Classes renomeadas: `OpenSheetsApi` → `OpenMonetisApi`, `OpenSheetsApp` → `OpenMonetisApp`, `OpenSheetsCompanionTheme` → `OpenMonetisCompanionTheme`
-- URLs do repositório atualizados para `openmonetis` / `openmonetis-companion`
-- Database: `opensheets_companion.db` → `openmonetis_companion.db`
-- SharedPreferences: `opensheets_secure_prefs` → `openmonetis_secure_prefs`
-- README reescrito com novo nome e URLs
+### Atendimento web
 
-## [1.0.3] - 2026-02-15
+- Abre o Ticket da empresa dentro do app (upload, câmera, download, localização e notificações
+  nativas), substituindo o app WebView antigo. Roda no processo `:web`, com a origem travada.
+- Aparelho só de atendimento não liga o listener de notificações.
 
-### Corrigido
+### Plataforma
 
-- Regex de extração do nome do estabelecimento nas notificações
-
-## [1.0.2] - 2026-02-15
-
-### Adicionado
-
-- Logo na barra de título da tela principal
-- Documentação completa no README
-
-## [1.0.1] - 2026-02-14
-
-### Corrigido
-
-- Melhorias gerais de estabilidade
-
-## [1.0.0] - 2026-02-14
-
-### Adicionado
-
-- Captura automática de notificações bancárias (Nubank, Itaú, Bradesco, etc.)
-- Sincronização automática com OpenMonetis via API
-- Setup guiado com QR Code para configuração de servidor e token
-- Histórico de notificações com filtros por status
-- Gatilhos de captura personalizáveis
-- Tema claro/escuro (segue sistema)
-- Retry automático via WorkManager
-- Armazenamento seguro de token via EncryptedSharedPreferences
+- `minSdk` 23 (Android 6), `targetSdk` 35. `applicationId` `br.com.ticket.app`, rótulo "Ticket".
+- Interface, tema, ícones e camada de dados escritos para este projeto.
+- Testes: JUnit, Robolectric (SDK 23 e 35), Room em memória e MockWebServer.

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 15 força edge-to-edge; a tela do WebView usa a barra de ação clássica e trata os insets. -->
+    <style name="Theme.TicketCompanion.Web" parent="Theme.TicketCompanion.WebBase">
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>

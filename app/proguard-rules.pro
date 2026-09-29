@@ -34,6 +34,18 @@
 -keep class androidx.security.crypto.** { *; }
 
 # Keep data classes for Gson serialization
--keep class br.com.openmonetis.companion.data.remote.dto.** { *; }
--keep class br.com.openmonetis.companion.data.local.entities.** { *; }
--keep class br.com.openmonetis.companion.domain.model.** { *; }
+-keep class br.com.ticket.companion.data.remote.dto.** { *; }
+-keep class br.com.ticket.companion.data.local.entities.** { *; }
+-keep class br.com.ticket.companion.domain.connection.Connection { *; }
+-keep class br.com.ticket.companion.domain.connection.RetiredConnection { *; }
+
+# Tink references optional Error Prone compile-time annotations.
+-dontwarn com.google.errorprone.annotations.CanIgnoreReturnValue
+-dontwarn com.google.errorprone.annotations.CheckReturnValue
+-dontwarn com.google.errorprone.annotations.Immutable
+-dontwarn com.google.errorprone.annotations.RestrictedApi
+
+# Ponte JS do atendimento web: o R8 não pode renomear/remover os métodos chamados pela página.
+-keepclassmembers class br.com.ticket.companion.ui.web.WebActivity$NativeNotificationBridge {
+    @android.webkit.JavascriptInterface <methods>;
+}
